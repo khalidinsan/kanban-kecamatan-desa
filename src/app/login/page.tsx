@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLogo } from "@/components/brand-logo";
+import { BRAND } from "@/config/brand";
 
 export default function LoginPage() {
   return (
@@ -17,10 +18,13 @@ export default function LoginPage() {
               <BrandLogo size={56} className="h-14 w-14" priority />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Kanban Kecamatan Desa
+              {BRAND.name}
             </h1>
+            <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-primary">
+              {BRAND.regionLong}
+            </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Kabupaten Subang — masuk untuk mengelola tugas wilayah
+              {BRAND.tagline} — masuk untuk melanjutkan
             </p>
           </div>
 

@@ -16,6 +16,7 @@ import { useSidebar } from "@/components/sidebar-context";
 import { BrandLogo } from "@/components/brand-logo";
 import type { Role } from "@prisma/client";
 import type { ActionBadges } from "@/lib/action-badges";
+import { BRAND } from "@/config/brand";
 import { ROLE_LABELS } from "@/lib/transitions";
 
 type NavItem = {
@@ -112,10 +113,10 @@ export function AppSidebar({
           {!collapsed ? (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold tracking-tight">
-                Kanban Desa
+                {BRAND.name}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                Kab. Subang
+                {BRAND.region}
               </p>
             </div>
           ) : null}

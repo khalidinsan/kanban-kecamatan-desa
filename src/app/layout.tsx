@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthSessionProvider } from "@/components/session-provider";
+import { BRAND } from "@/config/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,41 +16,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const APP_NAME = "Kanban Kecamatan Desa";
-const APP_DESCRIPTION =
-  "Sistem kanban distribusi dan pemantauan tugas antara kecamatan dan desa di Kabupaten Subang.";
-
 export const metadata: Metadata = {
-  applicationName: APP_NAME,
+  applicationName: BRAND.name,
   title: {
-    default: `${APP_NAME} — Subang`,
-    template: `%s · ${APP_NAME}`,
+    default: BRAND.fullName,
+    template: `%s · ${BRAND.name}`,
   },
-  description: APP_DESCRIPTION,
-  keywords: [
-    "kanban",
-    "kecamatan",
-    "desa",
-    "Subang",
-    "tugas",
-    "pemerintahan",
-  ],
-  authors: [{ name: "Kabupaten Subang" }],
-  creator: "Kabupaten Subang",
+  description: BRAND.description,
+  keywords: [...BRAND.keywords],
+  authors: [{ name: BRAND.regionLong }],
+  creator: BRAND.regionLong,
   metadataBase: new URL(
     process.env.AUTH_URL?.replace(/\/$/, "") || "http://localhost:3000",
   ),
   openGraph: {
     type: "website",
     locale: "id_ID",
-    siteName: APP_NAME,
-    title: `${APP_NAME} — Kabupaten Subang`,
-    description: APP_DESCRIPTION,
+    siteName: BRAND.name,
+    title: BRAND.fullName,
+    description: BRAND.description,
   },
   twitter: {
     card: "summary",
-    title: `${APP_NAME} — Subang`,
-    description: APP_DESCRIPTION,
+    title: BRAND.fullName,
+    description: BRAND.description,
   },
   icons: {
     icon: [
@@ -62,7 +52,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: APP_NAME,
+    title: BRAND.name,
     statusBarStyle: "default",
   },
   formatDetection: {

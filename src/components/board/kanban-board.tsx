@@ -53,7 +53,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PRIMARY_BOARD_STATUSES } from "@/lib/tasks-query";
 import type { TaskStatus } from "@prisma/client";
 
-const VIEW_STORAGE_KEY = "kanban-board-view";
+const VIEW_STORAGE_KEY = "sikilat-board-view";
 
 /** Validated view from the URL (`view=kanban|list`), or null when absent/invalid. */
 export type BoardUrlView = BoardViewMode;

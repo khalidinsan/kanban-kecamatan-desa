@@ -7,7 +7,7 @@ import {
   useSyncExternalStore,
 } from "react";
 
-const STORAGE_KEY = "kanban-sidebar-collapsed";
+const STORAGE_KEY = "sikilat-sidebar-collapsed";
 
 type SidebarContextValue = {
   collapsed: boolean;

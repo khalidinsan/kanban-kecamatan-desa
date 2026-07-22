@@ -36,7 +36,7 @@ export function ExecutiveExportButton({
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
       const match = /filename="?([^";]+)"?/i.exec(disposition);
-      const filename = match?.[1] ?? "executive-tugas.csv";
+      const filename = match?.[1] ?? "sikilat-executive.csv";
 
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");

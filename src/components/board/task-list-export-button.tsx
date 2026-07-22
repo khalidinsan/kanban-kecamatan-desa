@@ -51,7 +51,7 @@ export function TaskListExportButton({
       tasksToCsvRows(tasks),
     );
     const stamp = format(new Date(), "yyyyMMdd-HHmm");
-    downloadCsv(`board-tugas-${stamp}.csv`, csv);
+    downloadCsv(`sikilat-board-${stamp}.csv`, csv);
   }, [tasks]);
 
   const isDisabled = disabled || tasks.length === 0;

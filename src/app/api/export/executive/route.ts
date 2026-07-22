@@ -112,7 +112,7 @@ export async function GET(request: Request) {
     user.role === "camat"
       ? user.kecamatanCode ?? "camat"
       : kecamatanFilter ?? "kabupaten";
-  const filename = `executive-tugas-${scope}-${stamp}.csv`;
+  const filename = `sikilat-executive-${scope}-${stamp}.csv`;
 
   return new NextResponse(csv, {
     status: 200,

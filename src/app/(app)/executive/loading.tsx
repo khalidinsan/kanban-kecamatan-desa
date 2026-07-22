@@ -47,7 +47,7 @@ export default function ExecutiveLoading() {
           <section className="rounded-3xl bg-card p-5 shadow-card sm:p-6">
             <h2 className="text-sm font-semibold">Distribusi status</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Proporsi tugas per kolom kanban
+              Proporsi tugas per kolom board
             </p>
             <Skeleton className="mt-4 h-56 w-full rounded-2xl" />
           </section>

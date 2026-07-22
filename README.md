@@ -1,12 +1,12 @@
-# Kanban Kecamatan–Desa
+# SIKILAT
 
-Aplikasi monolit untuk distribusi dan pemantauan tugas antara **pemerintah kecamatan** dan **pemerintah desa**. Deployment saat ini dikonfigurasi untuk **Kabupaten Subang (`32.13`)**, dengan referensi 30 kecamatan dan 253 desa/kelurahan.
+**SIKILAT** — sistem informasi kerja dan laporan tugas antara **pemerintah kecamatan** dan **pemerintah desa**. Deployment saat ini dikonfigurasi untuk **Kabupaten Subang (`32.13`)**, dengan referensi 30 kecamatan dan 253 desa/kelurahan.
 
 Operator kecamatan membuat tugas untuk desa. Operator desa mengerjakan tugas, mengirim beberapa laporan progress beserta lampiran, lalu mengajukannya untuk review. Operator kecamatan memverifikasi atau menolak pekerjaan, sedangkan camat memantau melalui executive dashboard.
 
 ## Fitur utama
 
-- Kanban drag-and-drop: **Baru → Dikerjakan → Review → Selesai**.
+- Board kanban drag-and-drop: **Baru → Dikerjakan → Review → Selesai**.
 - Review gate: tugas tidak dapat langsung diselesaikan tanpa verifikasi kecamatan.
 - Banyak laporan progress per tugas, masing-masing mendukung lampiran.
 - Penghapusan progress dengan permission dan workflow guard.
@@ -16,7 +16,7 @@ Operator kecamatan membuat tugas untuk desa. Operator desa mengerjakan tugas, me
 - Credentials authentication dan server-side authorization.
 - Master wilayah Kemendagri-aligned melalui snapshot `wilayah.id`.
 - Dark mode, responsive layout, collapsible sidebar, searchable select, date picker, modal, skeleton loading, dan motion yang menghormati `prefers-reduced-motion`.
-- Branding dan palet warna berdasarkan Lambang Kabupaten Subang.
+- Branding **SIKILAT** dengan palet warna Lambang Kabupaten Subang.
 
 ## Teknologi
 
