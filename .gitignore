@@ -39,6 +39,9 @@
 # Runtime uploads (must use persistent storage in production)
 /uploads/
 
+# Local SQLite + uploads backups (created by npm run backup)
+/backups/
+
 # Deployment tooling
 .vercel/
 

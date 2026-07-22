@@ -2,10 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { ArrowLeft, Calendar, MapPin, User } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, MapPin, User } from "lucide-react";
 import { AppTopbar } from "@/components/app-topbar";
 import { AttachmentList } from "@/components/tasks/attachment-list";
-import { PriorityBadge, StatusBadge } from "@/components/tasks/status-badge";
+import {
+  DeadlineBadge,
+  PriorityBadge,
+  StatusBadge,
+} from "@/components/tasks/status-badge";
 import { TaskActionsPanel } from "@/components/tasks/task-actions-panel";
 import { TaskTimeline } from "@/components/tasks/task-timeline";
 import {
@@ -13,8 +17,10 @@ import {
   AuthzError,
   requireSession,
 } from "@/lib/authz";
+import { getDeadlineInfo } from "@/lib/deadline";
 import { prisma } from "@/lib/prisma";
 import { TASK_DETAIL_INCLUDE } from "@/lib/tasks-query";
+import { cn } from "@/lib/utils";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -39,6 +45,24 @@ export default async function TaskDetailPage({ params }: PageProps) {
   const progressCount = task.updates.filter(
     (u) => u.eventType === "progress",
   ).length;
+  const systemEventCount = task.updates.length - progressCount;
+
+  const groupSiblings = task.taskGroupId
+    ? await prisma.task.findMany({
+        where: {
+          taskGroupId: task.taskGroupId,
+          id: { not: task.id },
+        },
+        select: {
+          id: true,
+          desa: { select: { name: true } },
+          status: true,
+        },
+        orderBy: { desa: { name: "asc" } },
+      })
+    : [];
+  const groupTotal = task.taskGroupId ? groupSiblings.length + 1 : 0;
+  const deadline = getDeadlineInfo(task.dueDate, task.status);
 
   return (
     <>
@@ -63,6 +87,10 @@ export default async function TaskDetailPage({ params }: PageProps) {
               <div className="flex flex-wrap items-start gap-2">
                 <StatusBadge status={task.status} />
                 <PriorityBadge priority={task.priority} />
+                <DeadlineBadge
+                  info={deadline}
+                  className="px-2.5 py-0.5 text-xs"
+                />
               </div>
               <h2 className="mt-3 text-xl font-semibold tracking-tight">
                 {task.title}
@@ -76,6 +104,35 @@ export default async function TaskDetailPage({ params }: PageProps) {
                   Tidak ada deskripsi.
                 </p>
               )}
+
+              {task.taskGroupId && groupTotal > 1 ? (
+                <div className="mt-4 rounded-2xl bg-primary/8 px-4 py-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Layers className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="font-medium text-foreground">
+                        Bagian dari penugasan multi-desa ({groupTotal} desa)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Salinan tugas yang sama dikirim ke desa lain dalam
+                        kelompok ini:
+                      </p>
+                      <ul className="flex flex-wrap gap-1.5 pt-0.5">
+                        {groupSiblings.map((sib) => (
+                          <li key={sib.id}>
+                            <Link
+                              href={`/tugas/${sib.id}`}
+                              className="inline-flex rounded-lg bg-card px-2 py-1 text-xs font-medium text-primary shadow-card transition hover:opacity-90"
+                            >
+                              {sib.desa?.name ?? "Desa"}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <dl className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="flex items-start gap-2 text-sm">
@@ -91,17 +148,37 @@ export default async function TaskDetailPage({ params }: PageProps) {
                   </div>
                 </div>
                 <div className="flex items-start gap-2 text-sm">
-                  <Calendar className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <Calendar
+                    className={cn(
+                      "mt-0.5 h-4 w-4",
+                      deadline?.kind === "overdue"
+                        ? "text-danger"
+                        : deadline?.kind === "soon"
+                          ? "text-amber-800 dark:text-accent"
+                          : "text-muted-foreground",
+                    )}
+                  />
                   <div>
                     <dt className="text-xs text-muted-foreground">
                       Jatuh tempo
                     </dt>
-                    <dd className="font-medium">
+                    <dd
+                      className={cn(
+                        "inline-flex flex-wrap items-center gap-2 font-medium",
+                        deadline?.kind === "overdue" && "text-danger",
+                        deadline?.kind === "soon" &&
+                          "text-amber-800 dark:text-accent",
+                      )}
+                    >
                       {task.dueDate
                         ? format(task.dueDate, "dd MMMM yyyy", {
                             locale: localeId,
                           })
                         : "—"}
+                      <DeadlineBadge
+                        info={deadline}
+                        className="px-2.5 py-0.5 text-xs"
+                      />
                     </dd>
                   </div>
                 </div>
@@ -143,9 +220,24 @@ export default async function TaskDetailPage({ params }: PageProps) {
             </section>
 
             <section className="rounded-3xl bg-card p-6 shadow-card">
-              <h3 className="mb-4 text-sm font-semibold">
-                Riwayat & progres
-              </h3>
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold">Riwayat & progres</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Jejak audit: progres operator dan peristiwa sistem
+                  </p>
+                </div>
+                {task.updates.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-semibold tabular-nums text-primary">
+                      {progressCount} progres
+                    </span>
+                    <span className="rounded-full bg-muted px-2.5 py-0.5 font-semibold tabular-nums text-muted-foreground">
+                      {systemEventCount} sistem
+                    </span>
+                  </div>
+                ) : null}
+              </div>
               <TaskTimeline
                 updates={task.updates}
                 currentUserId={user.id}

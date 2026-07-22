@@ -80,15 +80,14 @@ export function Modal({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          "relative z-[81] max-h-[min(90vh,760px)] w-full overflow-y-auto rounded-3xl bg-card shadow-elevated outline-none",
+          // overflow-visible so portaled dropdowns aren't clipped; body scrolls if needed
+          "relative z-[81] flex max-h-[min(90vh,760px)] w-full flex-col overflow-visible rounded-3xl bg-card shadow-elevated outline-none",
           SIZE[size],
           visible ? "anim-scale-in" : "anim-scale-out",
-          // mobile: slide up feel via same scale keyframes
-          "sm:anim-scale-in",
           className,
         )}
       >
-        <div className="sticky top-0 z-[82] flex items-start justify-between gap-3 bg-card/95 px-5 pt-5 backdrop-blur-sm sm:px-6">
+        <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-5 sm:px-6">
           <div className="min-w-0">
             <h2
               id={titleId}
@@ -109,7 +108,9 @@ export function Modal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="px-5 py-4 sm:px-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-visible px-5 py-4 sm:px-6">
+          {children}
+        </div>
       </div>
     </div>
   );

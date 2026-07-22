@@ -9,9 +9,12 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "wilayah:fetch": "tsx scripts/fetch-wilayah.ts"
+    "wilayah:fetch": "tsx scripts/fetch-wilayah.ts",
+    "backup": "tsx scripts/backup.ts",
+    "restore": "tsx scripts/restore.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

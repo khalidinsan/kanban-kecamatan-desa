@@ -2,17 +2,26 @@
 
 import { useMemo } from "react";
 import { Search, X } from "lucide-react";
-import { PRIORITY_LABELS } from "@/lib/labels";
-import type { TaskPriority } from "@prisma/client";
+import { PRIORITY_LABELS, STATUS_LABELS } from "@/lib/labels";
+import type { TaskPriority, TaskStatus } from "@prisma/client";
 import type { BoardDesaOption } from "@/components/board/types";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const PRIORITIES = Object.keys(PRIORITY_LABELS) as TaskPriority[];
+const STATUSES = Object.keys(STATUS_LABELS) as TaskStatus[];
 
 export type BoardFiltersState = {
   search: string;
   desaCode: string;
   priority: string;
+  status: string;
+};
+
+export const EMPTY_BOARD_FILTERS: BoardFiltersState = {
+  search: "",
+  desaCode: "",
+  priority: "",
+  status: "",
 };
 
 export function BoardFilters({
@@ -29,7 +38,8 @@ export function BoardFilters({
   const hasActive =
     filters.search.trim() !== "" ||
     filters.desaCode !== "" ||
-    filters.priority !== "";
+    filters.priority !== "" ||
+    filters.status !== "";
 
   const desaSelectOptions = useMemo(
     () => [
@@ -49,6 +59,17 @@ export function BoardFilters({
       ...PRIORITIES.map((p) => ({
         value: p,
         label: PRIORITY_LABELS[p],
+      })),
+    ],
+    [],
+  );
+
+  const statusSelectOptions = useMemo(
+    () => [
+      { value: "", label: "Semua status" },
+      ...STATUSES.map((s) => ({
+        value: s,
+        label: STATUS_LABELS[s],
       })),
     ],
     [],
@@ -82,6 +103,17 @@ export function BoardFilters({
       <SearchableSelect
         variant="filter"
         className="min-w-[9rem] sm:min-w-[11rem]"
+        options={statusSelectOptions}
+        value={filters.status}
+        onChange={(status) => onChange({ ...filters, status })}
+        placeholder="Semua status"
+        searchPlaceholder="Cari status…"
+        searchable={false}
+      />
+
+      <SearchableSelect
+        variant="filter"
+        className="min-w-[9rem] sm:min-w-[11rem]"
         options={prioritySelectOptions}
         value={filters.priority}
         onChange={(priority) => onChange({ ...filters, priority })}
@@ -93,9 +125,7 @@ export function BoardFilters({
       {hasActive ? (
         <button
           type="button"
-          onClick={() =>
-            onChange({ search: "", desaCode: "", priority: "" })
-          }
+          onClick={() => onChange({ ...EMPTY_BOARD_FILTERS })}
           className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />

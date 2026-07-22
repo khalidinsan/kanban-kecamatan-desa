@@ -248,3 +248,11 @@ body {
 .anim-interactive:active:not(:disabled) {
   transform: scale(0.98);
 }
+
+/* Safe-area helpers for notched phones (mobile bottom nav) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}

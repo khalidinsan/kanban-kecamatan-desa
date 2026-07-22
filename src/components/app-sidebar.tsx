@@ -15,6 +15,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { useSidebar } from "@/components/sidebar-context";
 import { BrandLogo } from "@/components/brand-logo";
 import type { Role } from "@prisma/client";
+import type { ActionBadges } from "@/lib/action-badges";
 import { ROLE_LABELS } from "@/lib/transitions";
 
 type NavItem = {
@@ -22,10 +23,17 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: Role[];
+  /** Key into ActionBadges for "perlu aksi" count */
+  badgeKey?: keyof ActionBadges;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/board", label: "Board", icon: LayoutDashboard },
+  {
+    href: "/board",
+    label: "Board",
+    icon: LayoutDashboard,
+    badgeKey: "board",
+  },
   {
     href: "/tugas/baru",
     label: "Tugas Baru",
@@ -37,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Executive",
     icon: BarChart3,
     roles: ["admin", "camat"],
+    badgeKey: "executive",
   },
   {
     href: "/admin/users",
@@ -46,14 +55,20 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+function formatBadgeCount(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
 export function AppSidebar({
   user,
+  badges,
 }: {
   user: {
     name: string;
     role: Role;
     username: string;
   };
+  badges?: ActionBadges;
 }) {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
@@ -72,7 +87,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 z-30 flex h-svh shrink-0 flex-col",
+        "sticky top-0 z-30 hidden h-svh shrink-0 flex-col md:flex",
         "bg-sidebar text-sidebar-foreground shadow-sidebar",
         "transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
         collapsed ? "w-16" : "w-64",
@@ -131,13 +146,21 @@ export function AppSidebar({
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
+          const badgeCount =
+            item.badgeKey && badges ? (badges[item.badgeKey] ?? 0) : 0;
+          const showBadge = badgeCount > 0;
+          const badgeLabel = showBadge
+            ? `${item.label}: ${badgeCount} perlu aksi`
+            : item.label;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? badgeLabel : undefined}
+              aria-label={showBadge ? badgeLabel : undefined}
               className={cn(
-                "anim-interactive inline-flex items-center rounded-xl text-sm font-medium",
+                "anim-interactive relative inline-flex items-center rounded-xl text-sm font-medium",
                 collapsed
                   ? "h-10 w-10 justify-center"
                   : "w-full gap-3 px-3 py-2.5",
@@ -146,8 +169,30 @@ export function AppSidebar({
                   : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed ? <span className="truncate">{item.label}</span> : null}
+              <span className="relative inline-flex shrink-0">
+                <Icon className="h-4 w-4" />
+                {showBadge && collapsed ? (
+                  <span
+                    className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white"
+                    aria-hidden
+                  >
+                    {formatBadgeCount(badgeCount)}
+                  </span>
+                ) : null}
+              </span>
+              {!collapsed ? (
+                <>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {showBadge ? (
+                    <span
+                      className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold leading-none text-white"
+                      aria-hidden
+                    >
+                      {formatBadgeCount(badgeCount)}
+                    </span>
+                  ) : null}
+                </>
+              ) : null}
             </Link>
           );
         })}

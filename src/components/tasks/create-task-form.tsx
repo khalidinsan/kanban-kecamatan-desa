@@ -10,7 +10,10 @@ import {
   FileDropzone,
 } from "@/components/ui/file-dropzone";
 import { DatePicker } from "@/components/ui/date-picker";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  SearchableMultiSelect,
+  SearchableSelect,
+} from "@/components/ui/searchable-select";
 
 export type WilayahOption = { code: string; name: string };
 export type KecamatanWithDesa = WilayahOption & { desa: WilayahOption[] };
@@ -42,7 +45,13 @@ export function CreateTaskForm({
     return kec?.desa ?? [];
   }, [mode, desaList, kecamatanList, kecamatanCode]);
 
-  const [desaCode, setDesaCode] = useState(availableDesa[0]?.code ?? "");
+  const [desaCodes, setDesaCodes] = useState<string[]>([]);
+
+  // Derive valid selection when available desa list changes (no effect/setState).
+  const validDesaCodes = useMemo(() => {
+    const allowed = new Set(availableDesa.map((d) => d.code));
+    return desaCodes.filter((c) => allowed.has(c));
+  }, [desaCodes, availableDesa]);
 
   const kecamatanOptions = useMemo(
     () =>
@@ -75,14 +84,26 @@ export function CreateTaskForm({
 
   function onKecamatanChange(code: string) {
     setKecamatanCode(code);
-    const kec = kecamatanList?.find((k) => k.code === code);
-    setDesaCode(kec?.desa[0]?.code ?? "");
+    setDesaCodes([]);
   }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    if (validDesaCodes.length === 0) {
+      setError("Minimal satu desa wajib dipilih.");
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
+    // Ensure multi-select values are present even if hidden inputs race
+    formData.delete("desaCodes");
+    formData.delete("desaCode");
+    for (const code of validDesaCodes) {
+      formData.append("desaCodes", code);
+    }
+
     startTransition(async () => {
       const result = (await createTask(formData)) as ActionResult | void;
       // redirect() never returns; only errors return ActionResult
@@ -175,23 +196,29 @@ export function CreateTaskForm({
       )}
 
       <div className="space-y-2">
-        <label htmlFor="desaCode" className="text-sm font-medium">
+        <label htmlFor="desaCodes" className="text-sm font-medium">
           Desa tujuan <span className="text-danger">*</span>
         </label>
-        <SearchableSelect
-          id="desaCode"
-          name="desaCode"
+        <SearchableMultiSelect
+          id="desaCodes"
+          name="desaCodes"
           required
           options={desaOptions}
-          value={desaCode}
-          onChange={setDesaCode}
+          value={validDesaCodes}
+          onChange={setDesaCodes}
           placeholder={
-            availableDesa.length === 0 ? "Tidak ada desa" : "Pilih desa"
+            availableDesa.length === 0
+              ? "Tidak ada desa"
+              : "Pilih satu atau lebih desa"
           }
           searchPlaceholder="Cari desa…"
           emptyText="Desa tidak ditemukan"
           disabled={availableDesa.length === 0}
         />
+        <p className="text-xs text-muted-foreground">
+          Bisa memilih beberapa desa dalam kecamatan yang sama. Setiap desa
+          mendapat salinan tugas terpisah.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -223,6 +250,8 @@ export function CreateTaskForm({
               <Loader2 className="h-4 w-4 animate-spin" />
               Menyimpan...
             </>
+          ) : validDesaCodes.length > 1 ? (
+            `Buat Tugas (${validDesaCodes.length} desa)`
           ) : (
             "Buat Tugas"
           )}

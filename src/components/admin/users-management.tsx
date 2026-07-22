@@ -6,8 +6,10 @@ import {
   Pencil,
   Plus,
   Search,
+  SearchX,
   Trash2,
   UserCheck,
+  Users,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -243,10 +245,44 @@ export function UsersManagement({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="rounded-2xl bg-muted/40 px-4 py-12 text-center text-sm text-muted-foreground">
-            {users.length === 0
-              ? "Belum ada pengguna."
-              : "Tidak ada pengguna yang cocok dengan filter."}
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-muted/40 px-4 py-12 text-center">
+            {users.length === 0 ? (
+              <Users className="h-7 w-7 text-muted-foreground/70" />
+            ) : (
+              <SearchX className="h-7 w-7 text-muted-foreground/70" />
+            )}
+            <p className="mt-3 text-sm font-semibold text-foreground">
+              {users.length === 0
+                ? "Belum ada pengguna"
+                : "Tidak ada pengguna yang cocok"}
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              {users.length === 0
+                ? "Tambah akun operator, camat, atau admin agar tim dapat mengakses board."
+                : "Ubah pencarian atau filter peran/status untuk melihat hasil lain."}
+            </p>
+            {users.length === 0 ? (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="anim-interactive mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" />
+                Tambah pengguna
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setRoleFilter("");
+                  setStatusFilter("");
+                }}
+                className="anim-interactive mt-4 inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-card hover:opacity-90"
+              >
+                Reset filter
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">

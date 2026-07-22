@@ -109,6 +109,8 @@ model Task {
   submittedAt          DateTime?
   completedAt          DateTime?
   dueDate              DateTime?
+  /// Shared id linking copies of the same multi-desa assignment (one Task row per desa).
+  taskGroupId          String?
   kabupatenCode        String
   kecamatanCode        String
   desaCode             String?
@@ -129,6 +131,7 @@ model Task {
   @@index([kabupatenCode])
   @@index([kecamatanCode])
   @@index([desaCode])
+  @@index([taskGroupId])
   @@index([createdById])
   @@index([assignedToId])
 }

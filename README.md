@@ -195,6 +195,22 @@ SQLite cocok untuk deployment single-instance dengan trafik tulis rendah. Jangan
 - folder `uploads/`;
 - konfigurasi environment/secret melalui secret manager (bukan Git).
 
+## Backup & restore
+
+Skrip di `scripts/` menyalin database SQLite (path dari `DATABASE_URL`, default `prisma/dev.db`) dan folder `uploads/` ke `backups/backup-YYYYMMDD-HHMMSS/` beserta `manifest.json` (timestamp dan ukuran). Folder `backups/` di-ignore oleh Git. Seed data di `data/` **tidak** disentuh.
+
+```bash
+# Buat backup
+npm run backup
+
+# Restore (wajib konfirmasi — menimpa DB + uploads hidup)
+CONFIRM=1 npm run restore -- backups/backup-YYYYMMDD-HHMMSS
+# atau
+npx tsx scripts/restore.ts backups/backup-YYYYMMDD-HHMMSS --force
+```
+
+Restart aplikasi setelah restore agar file database dibuka ulang.
+
 ## Struktur project
 
 ```text
@@ -212,6 +228,8 @@ data/
   wilayah-32.13.json
 scripts/
   fetch-wilayah.ts
+  backup.ts
+  restore.ts
 public/brand/
   seal-subang.svg
 ```

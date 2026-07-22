@@ -27,21 +27,31 @@ export type TransitionResult =
       error: string;
     };
 
-const KEC_ROLES: Role[] = ["operator_kecamatan", "admin"];
-const DESA_OR_KEC: Role[] = ["operator_desa", "operator_kecamatan", "admin"];
+/** Desa: kerjakan tugas (mulai, progress, ajukan review). */
+const DESA_EXEC_ROLES: Role[] = ["operator_desa"];
+
+/** Kecamatan + admin: buat tugas, verifikasi/tolak, batalkan. */
+const KEC_REVIEW_ROLES: Role[] = ["operator_kecamatan", "admin"];
 
 function hasRole(role: Role, allowed: Role[]): boolean {
   return allowed.includes(role);
 }
 
 /**
- * Status transition rules:
- * - progress: only when dikerjakan (no status change); not allowed on baru
- * - baru → dikerjakan via start (desa/kecamatan)
- * - dikerjakan → review via submit (desa), requires min 1 progress
- * - review → selesai approve (kecamatan/admin)
- * - review → dikerjakan reject with required reason (kecamatan/admin)
- * - no desa shortcut to selesai
+ * Status transition rules (strict role separation):
+ *
+ * Desa (operator_desa only):
+ * - start: baru → dikerjakan
+ * - progress: only when dikerjakan
+ * - submit_review: dikerjakan → review (min 1 progress)
+ *
+ * Kecamatan / admin:
+ * - approve: review → selesai
+ * - reject: review → dikerjakan (alasan wajib)
+ * - cancel: → dibatalkan
+ *
+ * Camat: no mutations (all actions fail).
+ * Admin does NOT execute desa workflow (use desa account for that).
  */
 export function evaluateTransition(params: {
   role: Role;
@@ -61,8 +71,11 @@ export function evaluateTransition(params: {
 
   switch (action) {
     case "progress": {
-      if (!hasRole(role, DESA_OR_KEC)) {
-        return { ok: false, error: "Peran Anda tidak dapat menambahkan progres." };
+      if (!hasRole(role, DESA_EXEC_ROLES)) {
+        return {
+          ok: false,
+          error: "Hanya operator desa yang dapat menambahkan progres.",
+        };
       }
       if (currentStatus !== "dikerjakan") {
         return {
@@ -79,8 +92,11 @@ export function evaluateTransition(params: {
     }
 
     case "start": {
-      if (!hasRole(role, DESA_OR_KEC)) {
-        return { ok: false, error: "Peran Anda tidak dapat memulai tugas." };
+      if (!hasRole(role, DESA_EXEC_ROLES)) {
+        return {
+          ok: false,
+          error: "Hanya operator desa yang dapat memulai pengerjaan tugas.",
+        };
       }
       if (currentStatus !== "baru") {
         return { ok: false, error: "Hanya tugas berstatus baru yang dapat dimulai." };
@@ -94,9 +110,11 @@ export function evaluateTransition(params: {
     }
 
     case "submit_review": {
-      // Desa submits; kecamatan may also submit if working a task
-      if (!hasRole(role, DESA_OR_KEC)) {
-        return { ok: false, error: "Peran Anda tidak dapat mengajukan review." };
+      if (!hasRole(role, DESA_EXEC_ROLES)) {
+        return {
+          ok: false,
+          error: "Hanya operator desa yang dapat mengajukan review.",
+        };
       }
       if (currentStatus !== "dikerjakan") {
         return {
@@ -119,16 +137,15 @@ export function evaluateTransition(params: {
     }
 
     case "approve": {
-      if (!hasRole(role, KEC_ROLES)) {
+      if (!hasRole(role, KEC_REVIEW_ROLES)) {
         return {
           ok: false,
-          error: "Hanya operator kecamatan atau admin yang dapat menyetujui.",
+          error: "Hanya operator kecamatan atau admin yang dapat memverifikasi.",
         };
       }
       if (currentStatus !== "review") {
         return { ok: false, error: "Hanya tugas berstatus review yang dapat disetujui." };
       }
-      // Explicit: no desa shortcut to selesai (enforced by role check above)
       return {
         ok: true,
         fromStatus: "review",
@@ -138,7 +155,7 @@ export function evaluateTransition(params: {
     }
 
     case "reject": {
-      if (!hasRole(role, KEC_ROLES)) {
+      if (!hasRole(role, KEC_REVIEW_ROLES)) {
         return {
           ok: false,
           error: "Hanya operator kecamatan atau admin yang dapat menolak.",
@@ -160,10 +177,12 @@ export function evaluateTransition(params: {
     }
 
     case "cancel": {
-      if (!hasRole(role, ["admin", "operator_kecamatan"])) {
-        return { ok: false, error: "Peran Anda tidak dapat membatalkan tugas." };
+      if (!hasRole(role, KEC_REVIEW_ROLES)) {
+        return {
+          ok: false,
+          error: "Hanya operator kecamatan atau admin yang dapat membatalkan tugas.",
+        };
       }
-      // selesai / dibatalkan already rejected above
       return {
         ok: true,
         fromStatus: currentStatus,
@@ -190,7 +209,14 @@ export function allowedActionsFor(
     "cancel",
   ];
   return actions.filter(
-    (action) => evaluateTransition({ role, currentStatus: status, action, progressCount: 1 }).ok,
+    (action) =>
+      evaluateTransition({
+        role,
+        currentStatus: status,
+        action,
+        progressCount: 1,
+        reason: "placeholder",
+      }).ok,
   );
 }
 

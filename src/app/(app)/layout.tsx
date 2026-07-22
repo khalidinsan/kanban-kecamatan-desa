@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/authz";
+import { getActionBadges } from "@/lib/action-badges";
 import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({
@@ -7,6 +8,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireSession();
+  const badges = await getActionBadges(user);
 
   return (
     <AppShell
@@ -15,6 +17,7 @@ export default async function AppLayout({
         role: user.role,
         username: user.username,
       }}
+      badges={badges}
     >
       {children}
     </AppShell>

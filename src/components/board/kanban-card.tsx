@@ -12,8 +12,12 @@ import {
   Paperclip,
   Activity,
 } from "lucide-react";
-import { PriorityBadge } from "@/components/tasks/status-badge";
+import {
+  DeadlineBadge,
+  PriorityBadge,
+} from "@/components/tasks/status-badge";
 import type { BoardTask } from "@/components/board/types";
+import { getDeadlineInfo } from "@/lib/deadline";
 import { cn } from "@/lib/utils";
 
 export function KanbanCard({
@@ -48,6 +52,7 @@ export function KanbanCard({
 
   const showRejected =
     Boolean(task.lastRejectionReason) && task.status === "dikerjakan";
+  const deadline = getDeadlineInfo(task.dueDate, task.status);
 
   return (
     <article
@@ -104,11 +109,19 @@ export function KanbanCard({
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
             {task.dueDate ? (
-              <span className="inline-flex items-center gap-1">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1",
+                  deadline?.kind === "overdue" && "font-medium text-danger",
+                  deadline?.kind === "soon" &&
+                    "font-medium text-amber-800 dark:text-accent",
+                )}
+              >
                 <Calendar className="h-3 w-3" />
                 {format(new Date(task.dueDate), "dd MMM yyyy", {
                   locale: localeId,
                 })}
+                <DeadlineBadge info={deadline} />
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1">

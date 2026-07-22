@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
@@ -29,12 +30,36 @@ const createTaskSchema = z.object({
   description: z.string().trim().max(5000).optional().nullable(),
   priority: z.enum(PRIORITIES).default("sedang"),
   dueDate: z.string().optional().nullable(),
-  desaCode: z.string().min(1, "Desa wajib dipilih."),
+  desaCodes: z
+    .array(z.string().min(1))
+    .min(1, "Minimal satu desa wajib dipilih."),
   kecamatanCode: z.string().optional().nullable(),
 });
 
 function canCreateTask(user: SessionUser): boolean {
   return user.role === "admin" || user.role === "operator_kecamatan";
+}
+
+/** Collect desa codes from multi-select (`desaCodes`) or repeated/single `desaCode`. */
+function desaCodesFromFormData(formData: FormData): string[] {
+  const multi = formData
+    .getAll("desaCodes")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  if (multi.length > 0) {
+    return [...new Set(multi)];
+  }
+
+  const singles = formData
+    .getAll("desaCode")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  return [...new Set(singles)];
+}
+
+function newTaskGroupId(): string {
+  // cuid-like token shared across multi-desa task copies
+  return `c${Date.now().toString(36)}${randomBytes(10).toString("hex")}`;
 }
 
 export async function createTask(formData: FormData): Promise<ActionResult> {
@@ -52,7 +77,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     description: formData.get("description") || null,
     priority: formData.get("priority") || "sedang",
     dueDate: formData.get("dueDate") || null,
-    desaCode: formData.get("desaCode"),
+    desaCodes: desaCodesFromFormData(formData),
     kecamatanCode: formData.get("kecamatanCode") || null,
   });
 
@@ -64,19 +89,31 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
   const data = parsed.data;
 
   try {
-    const desa = await prisma.desa.findUnique({
-      where: { code: data.desaCode },
+    const desas = await prisma.desa.findMany({
+      where: { code: { in: data.desaCodes } },
       include: {
         kecamatan: { select: { code: true, kabupatenCode: true } },
       },
     });
 
-    if (!desa) {
-      return { ok: false, error: "Desa tidak ditemukan." };
+    if (desas.length !== data.desaCodes.length) {
+      return { ok: false, error: "Satu atau lebih desa tidak ditemukan." };
     }
 
+    const kecamatanCodes = new Set(desas.map((d) => d.kecamatanCode));
+    if (kecamatanCodes.size !== 1) {
+      return {
+        ok: false,
+        error: "Semua desa harus berada dalam satu kecamatan yang sama.",
+      };
+    }
+
+    const kecamatanCode = desas[0]!.kecamatanCode;
+    const kabupatenCode =
+      desas[0]!.kecamatan.kabupatenCode || ACTIVE_KABUPATEN.code;
+
     if (user.role === "operator_kecamatan") {
-      if (!user.kecamatanCode || desa.kecamatanCode !== user.kecamatanCode) {
+      if (!user.kecamatanCode || kecamatanCode !== user.kecamatanCode) {
         return {
           ok: false,
           error: "Desa harus berada dalam wilayah kecamatan Anda.",
@@ -85,7 +122,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     }
 
     if (user.role === "admin" && data.kecamatanCode) {
-      if (desa.kecamatanCode !== data.kecamatanCode) {
+      if (kecamatanCode !== data.kecamatanCode) {
         return {
           ok: false,
           error: "Desa tidak cocok dengan kecamatan yang dipilih.",
@@ -109,6 +146,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
 
     let saved;
     try {
+      // Save files once per create batch; attachment rows reuse the same paths.
       saved = await saveUploadFiles(files);
     } catch (err) {
       if (err instanceof UploadError) {
@@ -117,44 +155,59 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       throw err;
     }
 
-    const task = await prisma.task.create({
-      data: {
-        title: data.title,
-        description: data.description || null,
-        priority: data.priority as TaskPriority,
-        dueDate,
-        status: "baru",
-        kabupatenCode: desa.kecamatan.kabupatenCode || ACTIVE_KABUPATEN.code,
-        kecamatanCode: desa.kecamatanCode,
-        desaCode: desa.code,
-        createdById: user.id,
-        attachments:
-          saved.length > 0
-            ? {
-                create: saved.map((f) => ({
-                  fileName: f.fileName,
-                  originalName: f.originalName,
-                  mimeType: f.mimeType,
-                  size: f.size,
-                  path: f.path,
-                })),
-              }
-            : undefined,
-        updates: {
-          create: {
-            authorId: user.id,
-            eventType: "status_change",
-            message: "Tugas dibuat",
-            fromStatus: null,
-            toStatus: "baru",
-          },
-        },
-      },
-    });
+    const isMulti = desas.length > 1;
+    const taskGroupId = isMulti ? newTaskGroupId() : null;
+    const attachmentCreates =
+      saved.length > 0
+        ? saved.map((f) => ({
+            fileName: f.fileName,
+            originalName: f.originalName,
+            mimeType: f.mimeType,
+            size: f.size,
+            path: f.path,
+          }))
+        : [];
 
+    const created = await prisma.$transaction(
+      desas.map((desa) =>
+        prisma.task.create({
+          data: {
+            title: data.title,
+            description: data.description || null,
+            priority: data.priority as TaskPriority,
+            dueDate,
+            status: "baru",
+            taskGroupId,
+            kabupatenCode,
+            kecamatanCode: desa.kecamatanCode,
+            desaCode: desa.code,
+            createdById: user.id,
+            attachments:
+              attachmentCreates.length > 0
+                ? { create: attachmentCreates }
+                : undefined,
+            updates: {
+              create: {
+                authorId: user.id,
+                eventType: "status_change",
+                message: isMulti
+                  ? `Tugas dibuat (penugasan multi-desa, ${desas.length} desa)`
+                  : "Tugas dibuat",
+                fromStatus: null,
+                toStatus: "baru",
+              },
+            },
+          },
+        }),
+      ),
+    );
+
+    const first = created[0]!;
     revalidatePath("/board");
-    revalidatePath(`/tugas/${task.id}`);
-    redirect(`/tugas/${task.id}`);
+    for (const task of created) {
+      revalidatePath(`/tugas/${task.id}`);
+    }
+    redirect(`/tugas/${first.id}`);
   } catch (err) {
     if (isRedirectError(err)) throw err;
     if (err instanceof AuthzError) {

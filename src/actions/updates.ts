@@ -57,14 +57,14 @@ export async function deleteProgress(
       };
     }
 
+    // Hanya operator desa yang menghapus progres miliknya (bukan kecamatan/admin).
     const canDelete =
-      user.role === "admin" ||
-      (user.role === "operator_desa" && update.authorId === user.id);
+      user.role === "operator_desa" && update.authorId === user.id;
 
     if (!canDelete) {
       return {
         ok: false,
-        error: "Anda tidak memiliki izin untuk menghapus progress ini.",
+        error: "Hanya operator desa (pembuat progres) yang dapat menghapus progres.",
       };
     }
 
