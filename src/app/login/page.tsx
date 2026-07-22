@@ -6,7 +6,7 @@ import { BRAND } from "@/config/brand";
 
 export default function LoginPage() {
   return (
-    <div className="relative flex min-h-full items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-full flex-col items-center justify-center px-4 py-10">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
@@ -20,12 +20,13 @@ export default function LoginPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               {BRAND.name}
             </h1>
-            <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-primary">
+            <p className="mt-2 max-w-sm text-sm font-medium leading-snug text-foreground/85">
+              {BRAND.subtitle}
+            </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-[0.12em] text-primary">
               {BRAND.regionLong}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {BRAND.tagline} — masuk untuk melanjutkan
-            </p>
+            <p className="mt-3 text-sm text-muted-foreground">{BRAND.tagline}</p>
           </div>
 
           <Suspense
@@ -35,6 +36,12 @@ export default function LoginPage() {
           </Suspense>
         </div>
       </div>
+
+      <p className="mt-8 max-w-md text-center text-[11px] leading-relaxed text-muted-foreground">
+        <span className="font-semibold text-foreground/80">{BRAND.name}</span>
+        {" — "}
+        {BRAND.subtitle}
+      </p>
     </div>
   );
 }

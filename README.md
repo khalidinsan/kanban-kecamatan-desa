@@ -1,6 +1,6 @@
 # SIKILAT
 
-**SIKILAT** — sistem informasi kerja dan laporan tugas antara **pemerintah kecamatan** dan **pemerintah desa**. Deployment saat ini dikonfigurasi untuk **Kabupaten Subang (`32.13`)**, dengan referensi 30 kecamatan dan 253 desa/kelurahan.
+**SIKILAT** (*Sistem Kecepatan Tindaklanjut Aduan Masyarakat*) — sistem kerja dan laporan tugas antara **pemerintah kecamatan** dan **pemerintah desa**. Deployment saat ini dikonfigurasi untuk **Kabupaten Subang (`32.13`)**, dengan referensi 30 kecamatan dan 253 desa/kelurahan.
 
 Operator kecamatan membuat tugas untuk desa. Operator desa mengerjakan tugas, mengirim beberapa laporan progress beserta lampiran, lalu mengajukannya untuk review. Operator kecamatan memverifikasi atau menolak pekerjaan, sedangkan camat memantau melalui executive dashboard.
 
