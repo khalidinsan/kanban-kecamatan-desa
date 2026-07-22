@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Inbox, LayoutDashboard, PlusCircle } from "lucide-react";
+import { FilterX, Inbox, LayoutDashboard, PlusCircle } from "lucide-react";
 import { AppTopbar } from "@/components/app-topbar";
 import { AttentionTable } from "@/components/executive/attention-table";
 import { CompletionByDesaChart } from "@/components/executive/completion-by-desa-chart";
@@ -8,6 +8,7 @@ import { ExecutiveExportButton } from "@/components/executive/executive-export-b
 import { KecamatanFilter } from "@/components/executive/kecamatan-filter";
 import { KpiCards } from "@/components/executive/kpi-cards";
 import { StatusChart } from "@/components/executive/status-chart";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ACTIVE_KABUPATEN } from "@/config/wilayah";
 import { requireRole } from "@/lib/authz";
 import {
@@ -105,35 +106,58 @@ export default async function ExecutivePage({ searchParams }: PageProps) {
         </div>
 
         {tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-3xl bg-card px-6 py-16 text-center shadow-card">
-            <Inbox className="h-8 w-8 text-muted-foreground/70" />
-            <p className="mt-3 text-sm font-semibold text-foreground">
-              Belum ada data tugas
-            </p>
-            <p className="mt-1 max-w-md text-sm text-muted-foreground">
-              {kecamatanFilter
-                ? "Tidak ada tugas di kecamatan yang dipilih. Ubah filter atau buka board untuk membuat tugas."
-                : "Dashboard akan menampilkan KPI, grafik, dan tugas yang perlu perhatian setelah ada data di board."}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <Link
-                href="/board"
-                className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Buka board
-              </Link>
-              {user.role === "admin" ? (
+          <EmptyState
+            icon={
+              kecamatanFilter ? (
+                <FilterX className="h-6 w-6" />
+              ) : (
+                <Inbox className="h-6 w-6" />
+              )
+            }
+            title={
+              kecamatanFilter
+                ? "Tidak ada data di kecamatan ini"
+                : user.role === "camat"
+                  ? "Belum ada data di kecamatan Anda"
+                  : "Belum ada data tugas"
+            }
+            description={
+              kecamatanFilter
+                ? "Ubah filter kecamatan atau buka board untuk membuat tugas di wilayah tersebut."
+                : user.role === "camat"
+                  ? "KPI, grafik, dan daftar perlu perhatian akan muncul setelah operator membuat tugas di board."
+                  : "Dashboard menampilkan KPI, grafik, dan tugas yang perlu perhatian setelah ada data di board."
+            }
+            actions={
+              <>
+                {kecamatanFilter ? (
+                  <Link
+                    href="/executive"
+                    className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
+                  >
+                    <FilterX className="h-4 w-4" />
+                    Hapus filter
+                  </Link>
+                ) : null}
                 <Link
-                  href="/tugas/baru"
-                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
+                  href="/board"
+                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
                 >
-                  <PlusCircle className="h-4 w-4" />
-                  Buat tugas
+                  <LayoutDashboard className="h-4 w-4" />
+                  Buka board
                 </Link>
-              ) : null}
-            </div>
-          </div>
+                {user.role === "admin" ? (
+                  <Link
+                    href="/tugas/baru"
+                    className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    Buat tugas
+                  </Link>
+                ) : null}
+              </>
+            }
+          />
         ) : (
           <>
             <KpiCards metrics={kpis} />

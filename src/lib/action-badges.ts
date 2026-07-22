@@ -49,11 +49,13 @@ function monitoringWhere(
 /**
  * Cheap count queries for sidebar "perlu aksi" badges, scoped by role.
  *
- * Aligns with ACL in `transitions.ts`:
- * - operator_desa: ditolak (dikerjakan + lastRejectionReason) + tugas baru
- * - operator_kecamatan: hanya status `review` (verifikasi/tolak)
- * - admin: board & executive = hanya `review` (bukan overdue dikerjakan)
- * - camat: executive = review ∪ overdue (pantauan read-only)
+ * Board = antrian yang bisa di-aksi role itu (ACL `transitions.ts`).
+ * Executive = pantauan "Perlu perhatian" (review ∪ overdue), selaras `needsAttention`.
+ *
+ * - operator_desa: board = ditolak + tugas baru
+ * - operator_kecamatan: board = review saja
+ * - admin: board = review (aksi); executive = review ∪ overdue (info)
+ * - camat: executive = review ∪ overdue (read-only)
  */
 export async function getActionBadges(
   user: SessionUser,
@@ -89,11 +91,12 @@ export async function getActionBadges(
     }
 
     case "admin": {
-      // Admin bertindak di review (verifikasi/tolak), sama di board & executive
-      const review = await prisma.task.count({
-        where: reviewWhere(scope),
-      });
-      return { board: review, executive: review };
+      // Board = aksi (verifikasi/tolak). Executive = pantauan (sama "Perlu perhatian").
+      const [board, executive] = await Promise.all([
+        prisma.task.count({ where: reviewWhere(scope) }),
+        prisma.task.count({ where: monitoringWhere(scope, now) }),
+      ]);
+      return { board, executive };
     }
 
     case "camat": {

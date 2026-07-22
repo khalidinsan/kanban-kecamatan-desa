@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createTask, type ActionResult } from "@/actions/tasks";
 import type { TaskPriority } from "@prisma/client";
 import { PRIORITY_LABELS } from "@/lib/labels";
@@ -92,7 +94,9 @@ export function CreateTaskForm({
     setError(null);
 
     if (validDesaCodes.length === 0) {
-      setError("Minimal satu desa wajib dipilih.");
+      const msg = "Minimal satu desa wajib dipilih.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -104,11 +108,41 @@ export function CreateTaskForm({
       formData.append("desaCodes", code);
     }
 
+    const desaCount = validDesaCodes.length;
+    toast.loading(
+      desaCount > 1
+        ? `Membuat tugas untuk ${desaCount} desa…`
+        : "Membuat tugas…",
+      { id: "create-task" },
+    );
+
     startTransition(async () => {
-      const result = (await createTask(formData)) as ActionResult | void;
-      // redirect() never returns; only errors return ActionResult
-      if (result && !result.ok) {
-        setError(result.error);
+      try {
+        const result = (await createTask(formData)) as ActionResult | void;
+        // redirect() never returns; only errors return ActionResult
+        if (result && !result.ok) {
+          toast.error(result.error, { id: "create-task" });
+          setError(result.error);
+          return;
+        }
+        toast.success(
+          desaCount > 1
+            ? `Tugas dibuat untuk ${desaCount} desa.`
+            : "Tugas berhasil dibuat.",
+          { id: "create-task" },
+        );
+      } catch (err) {
+        if (isRedirectError(err)) {
+          toast.success(
+            desaCount > 1
+              ? `Tugas dibuat untuk ${desaCount} desa.`
+              : "Tugas berhasil dibuat.",
+            { id: "create-task" },
+          );
+          throw err;
+        }
+        toast.error("Gagal membuat tugas. Coba lagi.", { id: "create-task" });
+        setError("Gagal membuat tugas. Coba lagi.");
       }
     });
   }
@@ -170,7 +204,9 @@ export function CreateTaskForm({
             name="dueDate"
             value={dueDate}
             onChange={setDueDate}
-            placeholder="Pilih tanggal"
+            placeholder="Pilih jatuh tempo"
+            disablePast
+            showPresets
           />
         </div>
       </div>

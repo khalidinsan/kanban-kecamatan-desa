@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   Calendar,
+  ChevronDown,
   ChevronRight,
   Inbox,
   Paperclip,
@@ -26,10 +27,14 @@ import {
   PriorityBadge,
   StatusBadge,
 } from "@/components/tasks/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getDeadlineInfo } from "@/lib/deadline";
 import { cn } from "@/lib/utils";
 
 type SortKey = "title" | "status" | "priority" | "dueDate";
+
+/** Rows shown initially; "Muat lebih" expands by this page size. */
+const LIST_PAGE_SIZE = 25;
 
 const STATUS_ORDER = {
   baru: 0,
@@ -82,6 +87,14 @@ export function TaskListView({
   const [sortKey, setSortKey] = useState<SortKey>("status");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Extra rows beyond the first page (user-driven only).
+  const [extra, setExtra] = useState(0);
+  const listFingerprint = `${tasks.length}:${sortKey}:${sortDir}`;
+  const [seenFingerprint, setSeenFingerprint] = useState(listFingerprint);
+  if (listFingerprint !== seenFingerprint) {
+    setSeenFingerprint(listFingerprint);
+    setExtra(0);
+  }
 
   const sorted = useMemo(() => {
     const list = [...tasks];
@@ -116,6 +129,13 @@ export function TaskListView({
     return list;
   }, [tasks, sortKey, sortDir]);
 
+  const visibleCount = LIST_PAGE_SIZE + extra;
+  const visibleRows = useMemo(
+    () => sorted.slice(0, visibleCount),
+    [sorted, visibleCount],
+  );
+  const listRemaining = Math.max(0, sorted.length - visibleCount);
+
   // Only count selections that are still in the filtered/visible set.
   const selectedTasks = useMemo(
     () => sorted.filter((t) => selectedIds.has(t.id)),
@@ -124,9 +144,9 @@ export function TaskListView({
   const activeSelectedCount = selectedTasks.length;
 
   const allVisibleSelected =
-    sorted.length > 0 && sorted.every((t) => selectedIds.has(t.id));
+    visibleRows.length > 0 && visibleRows.every((t) => selectedIds.has(t.id));
   const someVisibleSelected =
-    !allVisibleSelected && sorted.some((t) => selectedIds.has(t.id));
+    !allVisibleSelected && visibleRows.some((t) => selectedIds.has(t.id));
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -148,15 +168,15 @@ export function TaskListView({
 
   function toggleAllVisible() {
     setSelectedIds((prev) => {
-      if (sorted.length === 0) return prev;
-      const allSelected = sorted.every((t) => prev.has(t.id));
+      if (visibleRows.length === 0) return prev;
+      const allSelected = visibleRows.every((t) => prev.has(t.id));
       if (allSelected) {
         const next = new Set(prev);
-        for (const t of sorted) next.delete(t.id);
+        for (const t of visibleRows) next.delete(t.id);
         return next;
       }
       const next = new Set(prev);
-      for (const t of sorted) next.add(t.id);
+      for (const t of visibleRows) next.add(t.id);
       return next;
     });
   }
@@ -171,45 +191,53 @@ export function TaskListView({
         <div className="flex justify-end">
           <TaskListExportButton tasks={sorted} />
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-card px-6 py-16 text-center shadow-card">
-          {hasActiveFilters ? (
-            <SearchX className="h-8 w-8 text-muted-foreground/70" />
-          ) : (
-            <Inbox className="h-8 w-8 text-muted-foreground/70" />
-          )}
-          <p className="mt-3 text-sm font-semibold text-foreground">
-            {hasActiveFilters
+        <EmptyState
+          icon={
+            hasActiveFilters ? (
+              <SearchX className="h-6 w-6" />
+            ) : (
+              <Inbox className="h-6 w-6" />
+            )
+          }
+          title={
+            hasActiveFilters
               ? "Tidak ada tugas yang cocok"
-              : "Belum ada tugas"}
-          </p>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            {hasActiveFilters
+              : user.role === "operator_desa"
+                ? "Belum ada tugas untuk desa Anda"
+                : "Belum ada tugas"
+          }
+          description={
+            hasActiveFilters
               ? "Ubah pencarian atau filter, atau reset untuk melihat semua tugas."
               : canCreate
                 ? "Buat tugas pertama untuk mulai melacak pekerjaan desa."
-                : "Belum ada tugas di cakupan Anda."}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            {hasActiveFilters && onResetFilters ? (
-              <button
-                type="button"
-                onClick={onResetFilters}
-                className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
-              >
-                Reset filter
-              </button>
-            ) : null}
-            {canCreate ? (
-              <Link
-                href="/tugas/baru"
-                className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Buat tugas
-              </Link>
-            ) : null}
-          </div>
-        </div>
+                : user.role === "operator_desa"
+                  ? "Tugas baru akan muncul di sini setelah operator kecamatan menugaskan pekerjaan."
+                  : "Belum ada tugas di cakupan Anda."
+          }
+          actions={
+            <>
+              {hasActiveFilters && onResetFilters ? (
+                <button
+                  type="button"
+                  onClick={onResetFilters}
+                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
+                >
+                  Reset filter
+                </button>
+              ) : null}
+              {canCreate ? (
+                <Link
+                  href="/tugas/baru"
+                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Buat tugas
+                </Link>
+              ) : null}
+            </>
+          }
+        />
       </div>
     );
   }
@@ -291,7 +319,7 @@ export function TaskListView({
             </tr>
           </thead>
           <tbody>
-            {sorted.map((task) => {
+            {visibleRows.map((task) => {
               const deadline = getDeadlineInfo(task.dueDate, task.status);
               const rejected =
                 Boolean(task.lastRejectionReason) &&
@@ -395,7 +423,7 @@ export function TaskListView({
 
       {/* Mobile cards */}
       <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto md:hidden">
-        {sorted.map((task) => {
+        {visibleRows.map((task) => {
           const deadline = getDeadlineInfo(task.dueDate, task.status);
           const rejected =
             Boolean(task.lastRejectionReason) && task.status === "dikerjakan";
@@ -460,14 +488,30 @@ export function TaskListView({
         })}
       </div>
 
+      {listRemaining > 0 ? (
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setExtra((n) => n + LIST_PAGE_SIZE)}
+            className="anim-interactive inline-flex items-center gap-1.5 rounded-xl border border-dashed border-muted-foreground/25 bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground shadow-card transition hover:border-primary/30 hover:text-foreground"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            Muat {Math.min(LIST_PAGE_SIZE, listRemaining)} lagi
+            <span className="tabular-nums text-muted-foreground/80">
+              ({listRemaining} tersisa · total {sorted.length})
+            </span>
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          {sorted.length} tugas ditampilkan
+          {visibleRows.length} dari {sorted.length} tugas ditampilkan
           {activeSelectedCount > 0
             ? ` · ${activeSelectedCount} dipilih`
             : null}
         </p>
-        {sorted.length > 0 ? (
+        {visibleRows.length > 0 ? (
           <label className="inline-flex items-center gap-2 text-xs text-muted-foreground md:hidden">
             <input
               type="checkbox"
@@ -478,7 +522,7 @@ export function TaskListView({
               onChange={toggleAllVisible}
               className="h-4 w-4 rounded border-muted-foreground/40 accent-primary"
             />
-            Pilih semua
+            Pilih semua yang tampil
           </label>
         ) : null}
       </div>

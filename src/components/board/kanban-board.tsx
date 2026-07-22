@@ -49,6 +49,7 @@ import type {
   BoardUser,
   ReviewModalState,
 } from "@/components/board/types";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PRIMARY_BOARD_STATUSES } from "@/lib/tasks-query";
 import type { TaskStatus } from "@prisma/client";
 
@@ -456,45 +457,55 @@ export function KanbanBoard({
       )}
 
       {boardEmpty ? (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-3xl bg-card px-6 py-16 text-center shadow-card">
-          {hasActiveFilters ? (
-            <SearchX className="h-8 w-8 text-muted-foreground/70" />
-          ) : (
-            <Inbox className="h-8 w-8 text-muted-foreground/70" />
-          )}
-          <p className="mt-3 text-sm font-semibold text-foreground">
-            {hasActiveFilters
+        <EmptyState
+          icon={
+            hasActiveFilters ? (
+              <SearchX className="h-6 w-6" />
+            ) : (
+              <Inbox className="h-6 w-6" />
+            )
+          }
+          title={
+            hasActiveFilters
               ? "Tidak ada tugas yang cocok"
-              : "Belum ada tugas"}
-          </p>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            {hasActiveFilters
-              ? "Ubah pencarian atau filter, atau reset untuk melihat semua tugas."
+              : user.role === "operator_desa"
+                ? "Belum ada tugas untuk desa Anda"
+                : "Belum ada tugas"
+          }
+          description={
+            hasActiveFilters
+              ? "Ubah pencarian atau filter, atau reset untuk melihat semua tugas di cakupan Anda."
               : canCreate
-                ? "Buat tugas pertama untuk mulai melacak pekerjaan desa."
-                : "Belum ada tugas di cakupan Anda. Hubungi operator kecamatan jika diperlukan."}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
-              >
-                Reset filter
-              </button>
-            ) : null}
-            {canCreate ? (
-              <Link
-                href="/tugas/baru"
-                className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Buat tugas
-              </Link>
-            ) : null}
-          </div>
-        </div>
+                ? "Buat tugas pertama untuk mulai melacak pekerjaan desa di wilayah ini."
+                : user.role === "operator_desa"
+                  ? "Tugas baru akan muncul di sini setelah operator kecamatan menugaskan pekerjaan ke desa Anda."
+                  : user.role === "camat"
+                    ? "Belum ada data tugas di kecamatan Anda. Pantau board setelah operator membuat tugas."
+                    : "Belum ada tugas di cakupan Anda."
+          }
+          actions={
+            <>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/80"
+                >
+                  Reset filter
+                </button>
+              ) : null}
+              {canCreate ? (
+                <Link
+                  href="/tugas/baru"
+                  className="anim-interactive inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:opacity-90"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Buat tugas
+                </Link>
+              ) : null}
+            </>
+          }
+        />
       ) : viewMode === "list" ? (
         <TaskListView
           tasks={filteredTasks}

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function LoginForm() {
   const router = useRouter();
@@ -12,23 +13,50 @@ export function LoginForm() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  function flashError(message: string) {
+    setError(message);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 450);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const user = username.trim();
+    if (!user) {
+      flashError("Username wajib diisi.");
+      return;
+    }
+    if (!password) {
+      flashError("Password wajib diisi.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await signIn("credentials", {
-        username,
+        username: user,
         password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Username atau password salah.");
+        flashError(
+          "Username atau password salah. Periksa kembali dan coba lagi.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (result?.ok === false) {
+        flashError("Gagal masuk. Coba lagi beberapa saat.");
         setLoading(false);
         return;
       }
@@ -36,13 +64,27 @@ export function LoginForm() {
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError("Terjadi kesalahan. Coba lagi.");
+      flashError("Terjadi kesalahan jaringan. Periksa koneksi lalu coba lagi.");
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form
+      onSubmit={onSubmit}
+      className={cn("space-y-4", shake && "anim-shake")}
+      noValidate
+    >
+      {error ? (
+        <div
+          id="login-error"
+          role="alert"
+          className="rounded-xl border border-danger/20 bg-danger/10 px-3 py-2.5 text-sm text-danger"
+        >
+          {error}
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         <label htmlFor="username" className="text-sm font-medium text-foreground">
           Username
@@ -55,9 +97,14 @@ export function LoginForm() {
             autoComplete="username"
             required
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              if (error) setError(null);
+            }}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "login-error" : undefined}
             className="w-full rounded-xl bg-muted/60 py-2.5 pl-10 pr-3 text-sm text-foreground outline-none ring-0 transition placeholder:text-muted-foreground focus:bg-card focus:shadow-card"
-            placeholder="contoh: admin"
+            placeholder="Masukkan username"
           />
         </div>
       </div>
@@ -71,22 +118,34 @@ export function LoginForm() {
           <input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl bg-muted/60 py-2.5 pl-10 pr-3 text-sm text-foreground outline-none ring-0 transition placeholder:text-muted-foreground focus:bg-card focus:shadow-card"
-            placeholder="••••••••"
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (error) setError(null);
+            }}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "login-error" : undefined}
+            className="w-full rounded-xl bg-muted/60 py-2.5 pl-10 pr-11 text-sm text-foreground outline-none ring-0 transition placeholder:text-muted-foreground focus:bg-card focus:shadow-card"
+            placeholder="Masukkan password"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+            tabIndex={0}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
-
-      {error ? (
-        <div className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
-          {error}
-        </div>
-      ) : null}
 
       <button
         type="submit"

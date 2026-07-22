@@ -132,9 +132,26 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
 
     let dueDate: Date | null = null;
     if (data.dueDate) {
-      const d = new Date(data.dueDate);
+      const raw = data.dueDate.trim();
+      // Parse yyyy-MM-dd as local calendar day (avoid UTC off-by-one).
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+      const d = m
+        ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+        : new Date(raw);
       if (Number.isNaN(d.getTime())) {
         return { ok: false, error: "Tanggal jatuh tempo tidak valid." };
+      }
+      const today = new Date();
+      const startToday = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      if (d < startToday) {
+        return {
+          ok: false,
+          error: "Jatuh tempo tidak boleh tanggal yang sudah lewat.",
+        };
       }
       dueDate = d;
     }

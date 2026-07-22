@@ -29,10 +29,6 @@ export default function LoginPage() {
           >
             <LoginForm />
           </Suspense>
-
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Demo: admin / password123
-          </p>
         </div>
       </div>
     </div>

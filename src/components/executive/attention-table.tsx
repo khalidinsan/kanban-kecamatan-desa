@@ -21,8 +21,20 @@ const REASON_CLASS: Record<AttentionTask["reason"], string> = {
 export function AttentionTable({ tasks }: { tasks: AttentionTask[] }) {
   if (tasks.length === 0) {
     return (
-      <div className="rounded-2xl bg-muted/40 px-4 py-10 text-center text-sm text-muted-foreground">
-        Tidak ada tugas yang perlu perhatian saat ini.
+      <div className="rounded-2xl bg-muted/40 px-4 py-10 text-center">
+        <p className="text-sm font-medium text-foreground">
+          Semua aman saat ini
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Tidak ada tugas terlambat atau menunggu review di cakupan ini.
+        </p>
+        <Link
+          href="/board"
+          className="anim-interactive mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:opacity-90"
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Lihat board
+        </Link>
       </div>
     );
   }

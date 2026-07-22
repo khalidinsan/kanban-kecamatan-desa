@@ -15,17 +15,68 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const APP_NAME = "Kanban Kecamatan Desa";
+const APP_DESCRIPTION =
+  "Sistem kanban distribusi dan pemantauan tugas antara kecamatan dan desa di Kabupaten Subang.";
+
 export const metadata: Metadata = {
-  title: "Kanban Kecamatan Desa — Subang",
-  description: "Sistem kanban tugas kecamatan dan desa Kabupaten Subang",
+  applicationName: APP_NAME,
+  title: {
+    default: `${APP_NAME} — Subang`,
+    template: `%s · ${APP_NAME}`,
+  },
+  description: APP_DESCRIPTION,
+  keywords: [
+    "kanban",
+    "kecamatan",
+    "desa",
+    "Subang",
+    "tugas",
+    "pemerintahan",
+  ],
+  authors: [{ name: "Kabupaten Subang" }],
+  creator: "Kabupaten Subang",
+  metadataBase: new URL(
+    process.env.AUTH_URL?.replace(/\/$/, "") || "http://localhost:3000",
+  ),
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: APP_NAME,
+    title: `${APP_NAME} — Kabupaten Subang`,
+    description: APP_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: `${APP_NAME} — Subang`,
+    description: APP_DESCRIPTION,
+  },
   icons: {
-    icon: "/brand/seal-subang.svg",
-    apple: "/brand/seal-subang.svg",
+    icon: [
+      { url: "/brand/seal-subang.svg", type: "image/svg+xml" },
+      { url: "/brand/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: ["/brand/favicon-32.png"],
+  },
+  appleWebApp: {
+    capable: true,
+    title: APP_NAME,
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
 export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f7f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b140f" },
+  ],
   viewportFit: "cover",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -43,7 +94,16 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthSessionProvider>
             {children}
-            <Toaster richColors position="top-right" />
+            <Toaster
+              richColors
+              closeButton
+              position="top-right"
+              toastOptions={{
+                classNames: {
+                  toast: "shadow-elevated",
+                },
+              }}
+            />
           </AuthSessionProvider>
         </ThemeProvider>
       </body>
