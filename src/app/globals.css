@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+/*
+  Palette derived from Seal of Subang Regency:
+  - Gold:    #f1b608
+  - Green:   #016332, #00cd00
+  - Brown:   #8b4513, #8d6b05, #4a3802
+  - Blue:    #00008b (accent detail)
+*/
+
+:root {
+  --background: #f5f7f4;
+  --foreground: #122018;
+  --card: #ffffff;
+  --card-foreground: #122018;
+  --muted: #e6eee8;
+  --muted-foreground: #5a6b60;
+  /* Logo green #016332 */
+  --primary: #016332;
+  --primary-foreground: #f8faf8;
+  /* Logo gold #f1b608 — slightly deepened for UI contrast */
+  --accent: #d9a207;
+  --accent-foreground: #1a1504;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #122018;
+  --danger: #c43c2c;
+  --success: #018a3d;
+  --warning: #c99608;
+  --ring: #5fa87a;
+  /* Soft elevation */
+  --shadow-card: 0 1px 2px rgb(18 32 24 / 0.03), 0 3px 10px rgb(18 32 24 / 0.04);
+  --shadow-card-hover: 0 1px 3px rgb(18 32 24 / 0.04), 0 6px 16px rgb(18 32 24 / 0.06);
+  --shadow-elevated: 0 2px 6px rgb(18 32 24 / 0.04), 0 10px 28px rgb(18 32 24 / 0.06);
+  --shadow-sidebar: 1px 0 0 rgb(1 99 50 / 0.06), 6px 0 18px -8px rgb(18 32 24 / 0.06);
+}
+
+.dark {
+  --background: #0b140f;
+  --foreground: #e6efe8;
+  --card: #121f17;
+  --card-foreground: #e6efe8;
+  --muted: #1a2b20;
+  --muted-foreground: #95a89b;
+  --primary: #2f9f5b;
+  --primary-foreground: #04140a;
+  --accent: #f1b608;
+  --accent-foreground: #1a1504;
+  --sidebar: #0f1a13;
+  --sidebar-foreground: #e6efe8;
+  --danger: #f07167;
+  --success: #4ade80;
+  --warning: #f1b608;
+  --ring: #3d8f5c;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.2), 0 4px 14px rgb(0 0 0 / 0.18);
+  --shadow-card-hover: 0 1px 3px rgb(0 0 0 / 0.24), 0 8px 20px rgb(0 0 0 / 0.22);
+  --shadow-elevated: 0 2px 8px rgb(0 0 0 / 0.24), 0 12px 32px rgb(0 0 0 / 0.24);
+  --shadow-sidebar: 1px 0 0 rgb(255 255 255 / 0.04), 6px 0 18px -8px rgb(0 0 0 / 0.28);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-sidebar: var(--shadow-sidebar);
+}
+
+* {
+  border-color: transparent;
+}
+
+html,
+body {
+  min-height: 100%;
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  margin: 0;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+/* ── Motion tokens ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes anim-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes anim-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes anim-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes anim-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+}
+
+@keyframes anim-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes anim-slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes anim-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes anim-pop-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-2px);
+  }
+}
+
+@keyframes anim-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-fade-in {
+  animation: anim-fade-in 180ms ease-out both;
+}
+.anim-fade-out {
+  animation: anim-fade-out 160ms ease-in both;
+}
+.anim-scale-in {
+  animation: anim-scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-scale-out {
+  animation: anim-scale-out 160ms ease-in both;
+}
+.anim-slide-up-in {
+  animation: anim-slide-up-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-slide-up-out {
+  animation: anim-slide-up-out 160ms ease-in both;
+}
+.anim-pop-in {
+  animation: anim-pop-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-pop-out {
+  animation: anim-pop-out 140ms ease-in both;
+}
+.anim-page-in {
+  animation: anim-page-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-interactive {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 180ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
+}
+.anim-interactive:active:not(:disabled) {
+  transform: scale(0.98);
+}
